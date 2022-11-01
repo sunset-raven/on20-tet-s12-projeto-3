@@ -48,18 +48,20 @@ createCard = (user) => {
   `
   const linkRepositories = document.querySelector('.link-repositories')
   
-  linkRepositories.addEventListener('click', (event) => {
+  linkRepositories.addEventListener('click', clickLink = (event) => {
     event.preventDefault()
-    getRepositories(login)
+    getRepositories(login) 
+    // SOLUÇÃO DO BUG QUE IMPEDE DE REALIZAR A REQUISIÇÃO NOVAMENTE 
+    linkRepositories.removeEventListener('click', clickLink) 
   })
 }
 
 getRepositories = async (username) => {
   try {
+    // sugestão extra - verificar conteúdo do innerHTML da repositoriesList antes do fetch()
     const response = await fetch(`https://api.github.com/users/${username}/repos`)
     const repositories = await response.json()
     if(repositories.length > 0) {
-      console.log(repositories)
       createRepositoriesCards(repositories)
     } else {
       renderNotFoundRepositories(username)
@@ -70,19 +72,30 @@ getRepositories = async (username) => {
   }
 }
 
-createRepositoriesCards = (repositories) => {
+createRepositoriesCards = (repositories) => { 
+
   const repositoriesList = document.createElement('div')
-  repositoriesList.setAttribute('class', 'repositories-list')
-  main.appendChild(repositoriesList)
-  
+  repositoriesList.setAttribute('id', 'repositories-list')
+  main.appendChild(repositoriesList) 
+
+  // SOLUÇÃO DO BUG QUE PERMITE ATUALIZAR O CONTEÚDO DOS REPOSITÓRIOS: 
+  // let repositoriesList = document.getElementById('repositories-list')
+  // if(!repositoriesList) {
+  //   repositoriesList = document.createElement('div') 
+  //   repositoriesList.setAttribute('id', 'repositories-list')
+  //   main.appendChild(repositoriesList)
+  // } else {
+  //   repositoriesList.innerHTML = ""
+  // }
+
   repositories.forEach((repository) => {
     const { name, description, language, stargazers_count } = repository
     return repositoriesList.innerHTML += `
       <div class='repository'>
         <h2 class='repository-title'>${name}</h2>
-        <p class='repository-description'>${description}</p> 
+        <p class='repository-description'>${description ? description : ""}</p> 
         <div class='repository-details'>
-          <p class='repository-text'>${language}</p>
+          <p class='repository-text'>${language ? language : "não-definida"}</p>
           <p class='repository-icon'>
             <img src="../assets/star.png">
             ${stargazers_count}
@@ -104,3 +117,8 @@ renderUserNotFound = () => {
     </div>
   `
 }
+
+
+// caso queira atualizar -> permitir o evento, permitir que a chamada http acontecer, substituir o conteúdo que já existe
+
+// caso queira impossibilitar que seja feita novamente a renderização dos repositórios -> pode impedir o evento, pode impedir a chamada http ou pode impedir uma nova renderização
