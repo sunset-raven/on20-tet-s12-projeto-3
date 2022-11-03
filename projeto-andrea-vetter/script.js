@@ -1,4 +1,6 @@
 const main = document.getElementById('main-content');
+const mainCard = document.getElementById('main-card');
+const carousel = document.getElementById('carousel');
 const input = document.querySelector('.search-input');
 const button = document.querySelector('.search-button');
 
@@ -18,15 +20,16 @@ getGitHubUser = async (username) => {
     } else if (response.status == 200) {
       createCard(userData)
     }
+
   }
-  catch(err) {
-    console.error("Capturei um erro: ",err)
+  catch (err) {
+    console.error("Capturei um erro: ", err)
   }
 }
 
 createCard = (user) => {
   const { avatar_url, name, login, bio, followers, public_repos } = user
-  main.innerHTML = `
+  mainCard.innerHTML = `
     <div class='card'>
       <img class='profile-img' src=${avatar_url} alt="foto da usuária no github">
       <h2 class='profile-title'>${name}</h2>
@@ -46,56 +49,47 @@ createCard = (user) => {
       </div>
     </div>
   `
+  carousel.innerHTML = ""
+
   const linkRepositories = document.querySelector('.link-repositories')
-  
+
   linkRepositories.addEventListener('click', clickLink = (event) => {
     event.preventDefault()
-    getRepositories(login) 
-    // SOLUÇÃO DO BUG QUE IMPEDE DE REALIZAR A REQUISIÇÃO NOVAMENTE 
-    linkRepositories.removeEventListener('click', clickLink) 
+    getRepositories(login)
+    linkRepositories.removeEventListener('click', clickLink)
   })
 }
 
 getRepositories = async (username) => {
   try {
-    // sugestão extra - verificar conteúdo do innerHTML da repositoriesList antes do fetch()
     const response = await fetch(`https://api.github.com/users/${username}/repos`)
     const repositories = await response.json()
-    if(repositories.length > 0) {
+    if (repositories.length > 0) {
+      console.log(repositories)
       createRepositoriesCards(repositories)
     } else {
       renderNotFoundRepositories(username)
     }
   }
-  catch(err) {
-    console.error("Capturei um erro: ",err)
+  catch (err) {
+    console.error("Capturei um erro: ", err)
   }
 }
 
-createRepositoriesCards = (repositories) => { 
-
+createRepositoriesCards = (repositories) => {
   const repositoriesList = document.createElement('div')
   repositoriesList.setAttribute('id', 'repositories-list')
-  main.appendChild(repositoriesList) 
-
-  // SOLUÇÃO DO BUG QUE PERMITE ATUALIZAR O CONTEÚDO DOS REPOSITÓRIOS: 
-  // let repositoriesList = document.getElementById('repositories-list')
-  // if(!repositoriesList) {
-  //   repositoriesList = document.createElement('div') 
-  //   repositoriesList.setAttribute('id', 'repositories-list')
-  //   main.appendChild(repositoriesList)
-  // } else {
-  //   repositoriesList.innerHTML = ""
-  // }
+  repositoriesList.setAttribute('class', "c-carousel__slides js-carousel--simple")
+  carousel.appendChild(repositoriesList)
 
   repositories.forEach((repository) => {
     const { name, description, language, stargazers_count } = repository
-    return repositoriesList.innerHTML += `
-      <div class='repository'>
+    repositoriesList.innerHTML += `
+      <div class='repository c-carousel__slide'>
         <h2 class='repository-title'>${name}</h2>
-        <p class='repository-description'>${description ? description : ""}</p> 
+        <p class='repository-description'>${description}</p> 
         <div class='repository-details'>
-          <p class='repository-text'>${language ? language : "não-definida"}</p>
+          <p class='repository-text'>${language}</p>
           <p class='repository-icon'>
             <img src="../assets/star.png">
             ${stargazers_count}
@@ -104,6 +98,30 @@ createRepositoriesCards = (repositories) => {
       </div>
     `
   })
+  
+  carousel.innerHTML += `
+      <div class="js-carousel--simple-dots"></div>
+      `
+      // Retirei os botões arrow porque não consegui fazer com que ficassem no lugar que queria.
+      // <button class="js-carousel--simple-prev">«</button>
+      // <button class="js-carousel--simple-next">»</button>
+
+  const simpleCarousel = document.querySelector(".js-carousel--simple");
+
+  new Glider(simpleCarousel, {
+    slidesToShow: '4',
+    slidesToScroll: '4',
+    itemWidth: undefined,
+    exactWidth: false,
+    draggable: true,
+    dots: ".js-carousel--simple-dots",
+    // arrows: {
+    //   prev: ".js-carousel--simple-prev",
+    //   next: ".js-carousel--simple-next",
+    // },
+    scrollLock: true,
+  })
+
 }
 
 renderNotFoundRepositories = (username) => main.innerHTML += `<div class='not-found-repositories'><h2 class='not-found-subtitle'>${username} não possui nenhum repositório público ainda.</h2></div>`
@@ -118,7 +136,8 @@ renderUserNotFound = () => {
   `
 }
 
-
-// caso queira atualizar -> permitir o evento, permitir que a chamada http acontecer, substituir o conteúdo que já existe
-
-// caso queira impossibilitar que seja feita novamente a renderização dos repositórios -> pode impedir o evento, pode impedir a chamada http ou pode impedir uma nova renderização
+const toggle = document.getElementById("toggle");
+toggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+}
+)
